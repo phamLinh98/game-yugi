@@ -1,0 +1,51 @@
+{
+  "card": [
+    {
+      "id": 1,
+      "name": "Black Magician",
+      "type": "monster",
+      "attribute": "Dark",
+      "archtype": "Spellcaster",
+      "attack": 2500,
+      "defense": 2100,
+      "level": 7,
+      "description": "A powerful spellcaster with high attack and defense.",
+      "image_url": "https://i.pinimg.com/1200x/4e/fb/74/4efb7468119107a82c1ca964688eda83.jpg",
+      "effect": "0"
+    },
+    {
+      "id": 2,
+      "name": "Blue-Eyes White Dragon",
+      "type": "monster",
+      "attribute": "Light",
+      "archtype": "Dragon",
+      "attack": 3000,
+      "defense": 2500,
+      "level": 8,
+      "description": "A legendary dragon known for its immense power.",
+      "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+      "effect": "0"
+    },
+    {
+      "id": 3,
+      "name": "Dark Hole",
+      "type": "spell",
+      "attribute": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "Destroys all monsters on the field.",
+      "image_url": "https://i.pinimg.com/736x/3b/1a/34/3b1a349a6476dab83337f31b7f92382a.jpg",
+      "effect_types": "1"
+    }
+  ],
+  "effect_types": {
+    "0": "No Effect",
+    "1": "Destroy 1 monster on the field",
+    "2": "Increase attack by 500 points",
+    "3": "Draw 2 cards from your deck",
+    "4": "Negate the effect of 1 monster",
+    "5": "Inflict 1000 points of damage to your opponent"
+  }
+}

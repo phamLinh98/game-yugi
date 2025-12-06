@@ -1,0 +1,26 @@
+{
+  "name": "game-yugi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "backend": "npx json-server mock/card.json --port=4000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phamLinh98/game-yugi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/phamLinh98/game-yugi/issues"
+  },
+  "homepage": "https://github.com/phamLinh98/game-yugi#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "json-server": "^1.0.0-beta.3"
+  }
+}
