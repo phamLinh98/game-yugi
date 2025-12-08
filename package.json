@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "backend": "npx json-server mock/card.json --port=4000"
+    "backend": "npx json-server mock/card.json --port=4000",
+    "start": "nodemon index.js",
+    "run-system": "concurrently \"npm run backend\" \"npm run start\""
   },
   "repository": {
     "type": "git",
@@ -22,5 +24,8 @@
   "dependencies": {
     "express": "^5.2.1",
     "json-server": "^1.0.0-beta.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
