@@ -1,5 +1,5 @@
 {
-  "card": [
+  "player1": [
     {
       "id": 1,
       "name": "Black Magician",
@@ -110,6 +110,120 @@
       "level": null,
       "description": "Destroys 1 monster on the field and inflicts damage to both players equal to its attack points.",
       "image_url": "https://i.pinimg.com/736x/7e/8f/9a/7e8f9a0b1c2d3e4f5g6h7i8j9k0l1m2n.jpg",
+      "effect_types": "5"
+    }
+  ],
+  "player2": [
+    {
+      "id": 10,
+      "name": "Dark Paladin",
+      "type": "monster",
+      "attribute": "Dark",
+      "archtype": "Spellcaster",
+      "tribute_count": 2,
+      "attack": 2900,
+      "defense": 2400,
+      "level": 8,
+      "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
+      "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+      "effect": "0"
+    },
+    {
+      "id": 11,
+      "name": "Summoned Skull",
+      "type": "monster",
+      "attribute": "Dark",
+      "archtype": "Fiend",
+      "tribute_count": 1,
+      "attack": 2500,
+      "defense": 1200,
+      "level": 6,
+      "description": "A high attack fiend that can be summoned easily with only one tribute.",
+      "image_url": "https://i.pinimg.com/736x/67/d8/0d/67d80dd57d063da0dffa8b8bc4d07235.jpg",
+      "effect": "0"
+    },
+    {
+      "id": 12,
+      "name": "Buster Blader",
+      "type": "monster",
+      "attribute": "Earth",
+      "tribute_count": 1,
+      "archtype": "Warrior",
+      "attack": 2600,
+      "defense": 2300,
+      "level": 7,
+      "description": "Gains 500 attack for each Dragon-type monster on the opponent's field and graveyard.",
+      "image_url": "https://i.pinimg.com/736x/18/08/e4/1808e4585aa87d9e8a82b2a0b1c7d4aa.jpg",
+      "effect": "0"
+    },
+    {
+      "id": 13,
+      "name": "Monster Reborn",
+      "type": "spell",
+      "attribute": null,
+      "tribute_count": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "Special summons 1 monster from either player's graveyard.",
+      "image_url": "https://i.pinimg.com/736x/ef/cc/6d/efcc6d6bf5158e5e1aa652c20d76d65b.jpg",
+      "effect_types": "1"
+    },
+    {
+      "id": 14,
+      "name": "Raigeki",
+      "type": "spell",
+      "attribute": null,
+      "tribute_count": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "Destroys all opponent's monsters.",
+      "image_url": "https://i.pinimg.com/736x/be/6c/cb/be6ccb2f4501e41c5e31bd05627a6506.jpg",
+      "effect_types": "2"
+    },
+    {
+      "id": 15,
+      "name": "Graceful Charity",
+      "type": "spell",
+      "attribute": null,
+      "tribute_count": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "Draw 3 cards, then discard 2 cards.",
+      "image_url": "https://i.pinimg.com/736x/ce/3c/9a/ce3c9a7a41e582a330173df20d70fbb8.jpg",
+      "effect_types": "3"
+    },
+    {
+      "id": 16,
+      "name": "Torrential Tribute",
+      "type": "trap",
+      "attribute": null,
+      "tribute_count": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "When a monster is summoned: destroy all monsters on the field.",
+      "image_url": "https://i.pinimg.com/736x/aa/51/28/aa5128df099ff3533fb432658ef6f796.jpg",
+      "effect_types": "4"
+    },
+    {
+      "id": 17,
+      "name": "Magic Cylinder",
+      "type": "trap",
+      "attribute": null,
+      "tribute_count": null,
+      "archtype": null,
+      "attack": null,
+      "defense": null,
+      "level": null,
+      "description": "Negates the attack and inflicts damage to your opponent equal to the attacking monster's attack.",
+      "image_url": "https://i.pinimg.com/736x/f2/aa/49/f2aa49ba3d918de91ad95ac02c368f40.jpg",
       "effect_types": "5"
     }
   ],

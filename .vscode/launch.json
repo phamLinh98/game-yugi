@@ -6,25 +6,17 @@
     "configurations": [
         {
             "type": "node",
+            "name": "Debug",
+            "runtimeExecutable": "nodemon",
             "request": "launch",
-            "name": "Debug Nodejs",
+            "restart": true,
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/index.js",
             "env": {
-                "PORT": "3000"
+                "PORT": "3500"
             }
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Attach to Port 3000",
-            "port": 9229,
-            "restart": true,
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
         }
     ]
 }
