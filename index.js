@@ -1,14 +1,10 @@
 import express from "express";
+import { shuffleDeck } from "./utils/shuffle-deck.js";
+import router from "./routers/router.js";
 const app = express();
 app.use(express.json());
+app.use(router);
 const port = 3000;
-const shuffleDeck = (arr) => {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-};
 
 const playerGameStates = new Map();
 
