@@ -7,6 +7,7 @@ app.use(router);
 const port = 3000;
 
 const playerGameStates = new Map();
+const gameSessions = new Map();
 
 // State quản lý chung cho 2 player
 const createPlayerState = () => {
@@ -16,6 +17,9 @@ const createPlayerState = () => {
     graveZone: [],
     deckZone: [],
     cardInHand: [],
+    lifePoint: 8000,
+    isPlayerTurn: false,
+    gameId: null,
   };
 };
 
@@ -34,6 +38,19 @@ const getPlayerState = (playerId) => {
   return playerGameStates.get(playerId);
 };
 
+const createGameSession = (gameId, player1, player2, firstPlayer) => {
+  return {
+    gameId,
+    players: {
+      player1,
+      player2,
+    },
+    currentTurn: firstPlayer,
+    turnCount: 0,
+    battlePhase: false,
+  };
+};
+
 app.get("/card-remain-in-deck", async (req, res) => {
   try {
     const player = req.query.player;
@@ -50,7 +67,8 @@ app.get("/card-remain-in-deck", async (req, res) => {
     // Chưa có thì mới khởi tạo
     playerState = initializePlayer(player);
 
-    const data = await fetch(`https://game-yugi.vercel.app/deck?player=${player}`);
+    //const data = await fetch(`https://game-yugi.vercel.app/deck?player=${player}`);
+    const data = await fetch(`http://localhost:4000/${player}`);
     const cardData = await data.json();
     const cardsRemainInDeck = cardData.map((card) => ({
       ...card,
@@ -58,11 +76,278 @@ app.get("/card-remain-in-deck", async (req, res) => {
     }));
     playerState.deckZone = [...cardsRemainInDeck];
 
-    console.log(`Player ${player} - deckZone initialized:`, playerState.deckZone.length);
+    console.log(
+      `Player ${player} - deckZone initialized:`,
+      playerState.deckZone.length
+    );
     res.status(200).json(playerState.deckZone);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch data" });
+  }
+});
+
+app.post("/start-game", (req, res) => {
+  try {
+    const { player1, player2, gameId } = req.body;
+
+    if (!player1 || !player2 || !gameId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Random ai đi trước
+    const firstPlayer = Math.random() < 0.5 ? player1 : player2;
+
+    // Tạo game session
+    const gameSession = createGameSession(
+      gameId,
+      player1,
+      player2,
+      firstPlayer
+    );
+    gameSessions.set(gameId, gameSession);
+
+    // Initialize và set turn cho mỗi player
+    const player1State = initializePlayer(player1);
+    const player2State = initializePlayer(player2);
+
+    player1State.isPlayerTurn = firstPlayer === player1;
+    player2State.isPlayerTurn = firstPlayer === player2;
+    player1State.gameId = gameId;
+    player2State.gameId = gameId;
+    player1State.lifePoint = 8000;
+    player2State.lifePoint = 8000;
+
+    res.status(200).json({
+      gameId,
+      firstPlayer,
+      players: {
+        [player1]: {
+          isPlayerTurn: player1State.isPlayerTurn,
+          lifePoint: player1State.lifePoint,
+        },
+        [player2]: {
+          isPlayerTurn: player2State.isPlayerTurn,
+          lifePoint: player2State.lifePoint,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to start game" });
+  }
+});
+
+// End turn, switch role
+app.post("/end-turn", (req, res) => {
+  try {
+    const { playerId, gameId } = req.body;
+    const gameSession = gameSessions.get(gameId);
+
+    if (!gameSession) {
+      return res.status(404).json({ error: "Game not found" });
+    }
+
+    const playerState = getPlayerState(playerId);
+
+    if (!playerState.isPlayerTurn) {
+      return res.status(400).json({ error: "Not your turn" });
+    }
+
+    // Tìm opponent
+    const opponentId =
+      gameSession.players.player1 === playerId
+        ? gameSession.players.player2
+        : gameSession.players.player1;
+
+    const opponentState = getPlayerState(opponentId);
+
+    // Chuyển turn
+    playerState.isPlayerTurn = false;
+    opponentState.isPlayerTurn = true;
+    gameSession.currentTurn = opponentId;
+    gameSession.turnCount++;
+    gameSession.battlePhase = false;
+
+    res.status(200).json({
+      currentTurn: opponentId,
+      turnCount: gameSession.turnCount,
+      players: {
+        [playerId]: { isPlayerTurn: false },
+        [opponentId]: { isPlayerTurn: true },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to end turn" });
+  }
+});
+
+app.post("/battle-monster-vs-monster", (req, res) => {
+  try {
+    const {
+      gameId,
+      attackerId, // ID của player tấn công
+      attackerMonsterGuid, // Object chứa toàn bộ data quái tấn công
+      defenderMonsterGuid // Object chứa toàn bộ data quái bị tấn công
+    } = req.body;
+
+    const gameSession = gameSessions.get(gameId);
+    if (!gameSession) {
+      return res.status(404).json({ error: "Game not found" });
+    }
+
+    const attackerState = getPlayerState(attackerId);
+
+    // Kiểm tra có phải turn của attacker không
+    if (!attackerState.isPlayerTurn) {
+      return res.status(400).json({ error: "Not your turn" });
+    }
+
+    // Tìm defender
+    const defenderId = gameSession.players.player1 === attackerId
+      ? gameSession.players.player2
+      : gameSession.players.player1;
+
+    const defenderState = getPlayerState(defenderId);
+
+    // Lấy guid_id từ object
+    const attackerGuid = attackerMonsterGuid.guid_id;
+    const defenderGuid = defenderMonsterGuid.guid_id;
+
+    console.log("=== BATTLE DEBUG ===");
+    console.log("Attacker GUID:", attackerGuid);
+    console.log("Defender GUID:", defenderGuid);
+    console.log("Attacker Monster Zone:", attackerState.monsterZone.map(m => ({ guid: m.guid_id, name: m.name })));
+    console.log("Defender Monster Zone:", defenderState.monsterZone.map(m => ({ guid: m.guid_id, name: m.name })));
+
+    // Tìm quái tấn công trong monsterZone
+    const attackerMonster = attackerState.monsterZone.find(
+      m => m.guid_id === attackerGuid
+    );
+
+    if (!attackerMonster) {
+      return res.status(404).json({ error: "Attacker monster not found in monster zone" });
+    }
+
+    // Tìm quái bị tấn công trong monsterZone
+    const defenderMonster = defenderState.monsterZone.find(
+      m => m.guid_id === defenderGuid
+    );
+
+    if (!defenderMonster) {
+      return res.status(404).json({ error: "Defender monster not found in monster zone" });
+    }
+
+    console.log("Attacker Monster:", { name: attackerMonster.name, attack: attackerMonster.attack, mode: attackerMonster.mode });
+    console.log("Defender Monster:", { name: defenderMonster.name, attack: defenderMonster.attack, defense: defenderMonster.defense, mode: defenderMonster.mode });
+
+    let battleResult = {
+      attackerMonster: attackerMonster.name,
+      defenderMonster: defenderMonster.name,
+      attackerDamage: 0,
+      defenderDamage: 0,
+      destroyedMonsters: []
+    };
+
+    // Case 1: Defender ở Attack Position
+    if (defenderMonster.position === "attack") {
+      const attackDiff = attackerMonster.attack - defenderMonster.attack;
+
+      if (attackDiff > 0) {
+        // Attacker thắng
+        defenderState.lifePoint -= attackDiff;
+        battleResult.defenderDamage = attackDiff;
+        battleResult.destroyedMonsters.push(defenderMonster.name);
+
+        // Gửi quái bị hủy vào graveyard
+        defenderState.graveZone.push(defenderMonster);
+        defenderState.monsterZone = defenderState.monsterZone.filter(
+          m => m.guid_id !== defenderGuid
+        );
+
+      } else if (attackDiff < 0) {
+        // Defender thắng
+        attackerState.lifePoint -= Math.abs(attackDiff);
+        battleResult.attackerDamage = Math.abs(attackDiff);
+        battleResult.destroyedMonsters.push(attackerMonster.name);
+
+        // Gửi quái tấn công vào graveyard
+        attackerState.graveZone.push(attackerMonster);
+        attackerState.monsterZone = attackerState.monsterZone.filter(
+          m => m.guid_id !== attackerGuid
+        );
+
+      } else {
+        // Hòa - cả 2 bị hủy
+        battleResult.destroyedMonsters.push(attackerMonster.name, defenderMonster.name);
+
+        attackerState.graveZone.push(attackerMonster);
+        attackerState.monsterZone = attackerState.monsterZone.filter(
+          m => m.guid_id !== attackerGuid
+        );
+
+        defenderState.graveZone.push(defenderMonster);
+        defenderState.monsterZone = defenderState.monsterZone.filter(
+          m => m.guid_id !== defenderGuid
+        );
+      }
+    }
+    // Case 2: Defender ở Defense Position
+    else if (defenderMonster.position === "defense") {
+      const attackVsDefense = attackerMonster.attack - defenderMonster.defense;
+
+      if (attackVsDefense > 0) {
+        // Attacker thắng - hủy defender, không mất máu
+        battleResult.destroyedMonsters.push(defenderMonster.name);
+
+        defenderState.graveZone.push(defenderMonster);
+        defenderState.monsterZone = defenderState.monsterZone.filter(
+          m => m.guid_id !== defenderGuid
+        );
+
+      } else if (attackVsDefense < 0) {
+        // Defense thắng - attacker mất máu
+        attackerState.lifePoint -= Math.abs(attackVsDefense);
+        battleResult.attackerDamage = Math.abs(attackVsDefense);
+
+      } else {
+        // Hòa - không ai mất máu, không ai bị hủy
+        battleResult.result = "Draw - No damage";
+      }
+    }
+
+    // Check win condition
+    let winner = null;
+    if (attackerState.lifePoint <= 0) {
+      winner = defenderId;
+    } else if (defenderState.lifePoint <= 0) {
+      winner = attackerId;
+    }
+
+    console.log("=== FINAL RESULT ===");
+    console.log("Battle Result:", battleResult);
+    console.log(`Attacker (${attackerId}): LP=${attackerState.lifePoint}, Monsters=${attackerState.monsterZone.length}, Grave=${attackerState.graveZone.length}`);
+    console.log(`Defender (${defenderId}): LP=${defenderState.lifePoint}, Monsters=${defenderState.monsterZone.length}, Grave=${defenderState.graveZone.length}`);
+
+    res.status(200).json({
+      battleResult,
+      winner,
+      players: {
+        [attackerId]: {
+          lifePoint: attackerState.lifePoint,
+          monsterZone: attackerState.monsterZone.length,
+          graveZone: attackerState.graveZone.length
+        },
+        [defenderId]: {
+          lifePoint: defenderState.lifePoint,
+          monsterZone: defenderState.monsterZone.length,
+          graveZone: defenderState.graveZone.length
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Battle failed" });
   }
 });
 
@@ -81,9 +366,9 @@ app.get("/draw-one-card", async (req, res) => {
     );
     res.status(200).json({
       drawFirstCard: playerState.drawFirstCard,
-      cardInHand:playerState.cardInHand,
-      monsterZone:playerState.monsterZone,
-      deckZone:playerState.deckZone,
+      cardInHand: playerState.cardInHand,
+      monsterZone: playerState.monsterZone,
+      deckZone: playerState.deckZone,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch data" });
@@ -109,7 +394,9 @@ app.get("/get-first-5-cards", async (req, res) => {
 
     // Loại bỏ 5 lá khỏi deck (dùng id gốc thay vì guid_id)
     const drawnIds = deckZonefirst5Cards.map((card) => card.id);
-    playerState.deckZone = playerState.deckZone.filter((card) => !drawnIds.includes(card.id));
+    playerState.deckZone = playerState.deckZone.filter(
+      (card) => !drawnIds.includes(card.id)
+    );
 
     console.log("Cards drawn:", deckZonefirst5Cards.length);
     console.log("Cards remaining in deck:", playerState.deckZone.length);
@@ -125,10 +412,11 @@ app.get("/get-first-5-cards", async (req, res) => {
 
 app.get("/set-card-to-field", async (req, res) => {
   try {
-    const player = req.query.player;
+    const { player, mode } = req.query;
     const playerState = getPlayerState(player);
     for (const card of playerState.monsterZone) {
       card.position = "monster_zone";
+      card.mode = mode;
     }
 
     for (const card of playerState.spellTrapZone) {
@@ -142,8 +430,8 @@ app.get("/set-card-to-field", async (req, res) => {
       monsterZone: playerState.monsterZone,
       spellTrapZone: playerState.spellTrapZone,
       graveZone: playerState.graveZone,
-      deckZone:player.deckZone,
-      cardInHand: player.cardInHand
+      deckZone: player.deckZone,
+      cardInHand: player.cardInHand,
     });
   } catch (error) {
     res.status(500).json({ error: "No data To Show Cards" });
@@ -168,7 +456,9 @@ app.post("/status-card-in-field", async (req, res) => {
       playerState.spellTrapZone.push(card);
     }
     // Loại bỏ thẻ khỏi tay người chơi
-    playerState.cardInHand = playerState.cardInHand.filter((c) => c.guid_id !== guid_id);
+    playerState.cardInHand = playerState.cardInHand.filter(
+      (c) => c.guid_id !== guid_id
+    );
 
     res.status(200).json({
       monsterZone: playerState.monsterZone,
@@ -188,13 +478,17 @@ app.post("/sent-card-to-graveyard", async (req, res) => {
     const playerState = getPlayerState(player);
     const { position: position } = card;
     if (position === "monster_zone") {
-      const index = playerState.monsterZone.findIndex((c) => c.guid_id === card.guid_id);
+      const index = playerState.monsterZone.findIndex(
+        (c) => c.guid_id === card.guid_id
+      );
       if (index !== -1) {
         const [removedCard] = playerState.monsterZone.splice(index, 1);
         playerState.graveZone.push(removedCard);
       }
     } else if (position === "spell_trap_zone") {
-      const index = playerState.spellTrapZone.findIndex((c) => c.guid_id === card.guid_id);
+      const index = playerState.spellTrapZone.findIndex(
+        (c) => c.guid_id === card.guid_id
+      );
       if (index !== -1) {
         const [removedCard] = playerState.spellTrapZone.splice(index, 1);
         playerState.graveZone.push(removedCard);
@@ -218,7 +512,9 @@ app.post("/normal-summon", async (req, res) => {
     const { guid_id } = card;
 
     // Loại bỏ card khỏi cardInHand (card đang được summon)
-    const handIndex = playerState.cardInHand.findIndex((c) => c.guid_id === guid_id);
+    const handIndex = playerState.cardInHand.findIndex(
+      (c) => c.guid_id === guid_id
+    );
     if (handIndex !== -1) {
       playerState.cardInHand.splice(handIndex, 1);
     }
@@ -244,7 +540,9 @@ app.post("/special-summon", async (req, res) => {
     const playerState = getPlayerState(player);
     const { guid_id } = card;
     // Loại bỏ card khỏi cardInHand (card đang được summon)
-    const handIndex = playerState.cardInHand.findIndex((c) => c.guid_id === guid_id);
+    const handIndex = playerState.cardInHand.findIndex(
+      (c) => c.guid_id === guid_id
+    );
     if (handIndex !== -1) {
       playerState.cardInHand.splice(handIndex, 1);
     }
@@ -285,7 +583,9 @@ app.post("/tribute-summon", async (req, res) => {
     }
 
     // Loại bỏ card khỏi cardInHand (card đang được summon)
-    const handIndex = playerState.cardInHand.findIndex((c) => c.guid_id === guid_id);
+    const handIndex = playerState.cardInHand.findIndex(
+      (c) => c.guid_id === guid_id
+    );
     if (handIndex !== -1) {
       playerState.cardInHand.splice(handIndex, 1);
     }
