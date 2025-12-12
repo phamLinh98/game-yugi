@@ -249,7 +249,7 @@ app.post("/battle-monster-vs-monster", (req, res) => {
     };
 
     // Case 1: Defender ở Attack Position
-    if (defenderMonster.position === "attack") {
+    if (defenderMonster.mode === "attack") {
       const attackDiff = attackerMonster.attack - defenderMonster.attack;
 
       if (attackDiff > 0) {
@@ -292,7 +292,7 @@ app.post("/battle-monster-vs-monster", (req, res) => {
       }
     }
     // Case 2: Defender ở Defense Position
-    else if (defenderMonster.position === "defense") {
+    else if (defenderMonster.mode === "defense") {
       const attackVsDefense = attackerMonster.attack - defenderMonster.defense;
 
       if (attackVsDefense > 0) {
