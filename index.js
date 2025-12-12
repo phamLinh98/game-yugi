@@ -147,7 +147,7 @@ app.post("/end-turn", (req, res) => {
       return res.status(404).json({ error: "Game not found" });
     }
 
-    const playerState = getPlayerState(playerId);
+    let playerState = getPlayerState(playerId);
 
     if (!playerState.isPlayerTurn) {
       return res.status(400).json({ error: "Not your turn" });
@@ -354,7 +354,7 @@ app.post("/battle-monster-vs-monster", (req, res) => {
 app.get("/draw-one-card", async (req, res) => {
   try {
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     if (playerState.deckZone.length === 0) {
       return res.status(400).json({ message: "Deck is empty. You Lost" });
     }
@@ -378,7 +378,7 @@ app.get("/draw-one-card", async (req, res) => {
 app.get("/get-first-5-cards", async (req, res) => {
   try {
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     // Shuffle và lấy 5 lá từ deckZone hiện tại
     if (playerState.deckZone.length === 0) {
       return res.status(400).json({ error: "Deck is empty. You Lost" });
@@ -413,7 +413,7 @@ app.get("/get-first-5-cards", async (req, res) => {
 app.get("/set-card-to-field", async (req, res) => {
   try {
     const { player, mode } = req.query;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     for (const card of playerState.monsterZone) {
       card.position = "monster_zone";
       card.mode = mode;
@@ -442,7 +442,7 @@ app.post("/status-card-in-field", async (req, res) => {
   try {
     const card = req.body;
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
 
     const { guid_id: guid_id } = card;
     // Kiểm tra card có tồn tại không
@@ -475,7 +475,7 @@ app.post("/sent-card-to-graveyard", async (req, res) => {
   try {
     const card = req.body;
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     const { position: position } = card;
     if (position === "monster_zone") {
       const index = playerState.monsterZone.findIndex(
@@ -508,7 +508,7 @@ app.post("/normal-summon", async (req, res) => {
   try {
     const card = req.body;
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     const { guid_id } = card;
 
     // Loại bỏ card khỏi cardInHand (card đang được summon)
@@ -537,7 +537,7 @@ app.post("/special-summon", async (req, res) => {
   try {
     const card = req.body;
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
     const { guid_id } = card;
     // Loại bỏ card khỏi cardInHand (card đang được summon)
     const handIndex = playerState.cardInHand.findIndex(
@@ -566,7 +566,7 @@ app.post("/tribute-summon", async (req, res) => {
     const { card, tributeGuidIds } = req.body;
     const { guid_id, tribute_count } = card;
     const player = req.query.player;
-    const playerState = getPlayerState(player);
+    let playerState = getPlayerState(player);
 
     // Nếu tribute_count = 2, loại bỏ 2 monsters từ monsterZone
     if (tribute_count === 2) {
@@ -606,31 +606,31 @@ app.post("/tribute-summon", async (req, res) => {
 
 app.get("/monster-zone-list", (req, res) => {
   const player = req.query.player;
-  const playerState = getPlayerState(player);
+  let playerState = getPlayerState(player);
   res.status(200).json(playerState.monsterZone);
 });
 
 app.get("/spell-trap-zone-list", (req, res) => {
   const player = req.query.player;
-  const playerState = getPlayerState(player);
+  let playerState = getPlayerState(player);
   res.status(200).json(playerState.spellTrapZone);
 });
 
 app.get("/graveyard-zone-list", (req, res) => {
   const player = req.query.player;
-  const playerState = getPlayerState(player);
+  let playerState = getPlayerState(player);
   res.status(200).json(playerState.graveZone);
 });
 
 app.get("/card-in-hand-list", (req, res) => {
   const player = req.query.player;
-  const playerState = getPlayerState(player);
+  let playerState = getPlayerState(player);
   res.status(200).json(playerState.cardInHand);
 });
 
 app.get("/card-in-deck-list", (req, res) => {
   const player = req.query.player;
-  const playerState = getPlayerState(player);
+  let playerState = getPlayerState(player);
   res.status(200).json(playerState.deckZone);
 });
 
