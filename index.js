@@ -1,8 +1,10 @@
 import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import router from "./routers/router.js";
+import corsMiddleware from './middlewares/cors.js';
 const app = express();
 app.use(express.json());
+app.use(corsMiddleware);
 app.use(router);
 const port = 3000;
 
@@ -182,20 +184,96 @@ app.post("/end-turn", (req, res) => {
 });
 
 app.post("/battle-monster-vs-monster", (req, res) => {
+  
+  const dataMock = {
+    "gameId": "12345",
+    "attackerId": "player1",
+    "attackerMonsterGuid": {
+      "id": "2",
+      "name": "Blue-Eyes White Dragon",
+      "type": "monster",
+      "attribute": "Light",
+      "tribute_count": 2,
+      "archtype": "Dragon",
+      "attack": 3000,
+      "defense": 2500,
+      "level": 8,
+      "description": "A legendary dragon known for its immense power.",
+      "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+      "effect": "0",
+      "guid_id": "40b772e1-2853-4fce-bd72-65baebdc9cc4",
+      "position": "monster_zone",
+      "mode": "attack"
+    },
+    "defenderMonsterGuid": {
+      "id": "10",
+      "name": "Dark Paladin",
+      "type": "monster",
+      "attribute": "Dark",
+      "archtype": "Spellcaster",
+      "tribute_count": 2,
+      "attack": 2900,
+      "defense": 2400,
+      "level": 8,
+      "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
+      "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+      "effect": "0",
+      "guid_id": "55c7cc38-622b-4dd6-a987-b06283709985",
+      "position": "monster_zone",
+      "mode": "attack"
+    }
+  }
+
   try {
     const {
       gameId,
       attackerId, // ID của player tấn công
       attackerMonsterGuid, // Object chứa toàn bộ data quái tấn công
       defenderMonsterGuid // Object chứa toàn bộ data quái bị tấn công
-    } = req.body;
+    } = dataMock
 
-    const gameSession = gameSessions.get(gameId);
+    //const gameSession = gameSessions.get(gameId);
+    const gameSession = {
+      gameId,
+      players: {
+        player1: "player1",
+        player2: "player2",
+      },
+      currentTurn: "player1",
+      turnCount: 0,
+      battlePhase: false,
+    }
     if (!gameSession) {
       return res.status(404).json({ error: "Game not found" });
     }
 
-    const attackerState = getPlayerState(attackerId);
+    //const attackerState = getPlayerState(attackerId);
+    const attackerState = {
+      monsterZone: [{
+        "id": "2",
+        "name": "Blue-Eyes White Dragon",
+        "type": "monster",
+        "attribute": "Light",
+        "tribute_count": 2,
+        "archtype": "Dragon",
+        "attack": 0,
+        "defense": 3000,
+        "level": 8,
+        "description": "A legendary dragon known for its immense power.",
+        "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+        "effect": "0",
+        "guid_id": "40b772e1-2853-4fce-bd72-65baebdc9cc4",
+        "position": "monster_zone",
+        "mode": "attack"
+      }],
+      spellTrapZone: [],
+      graveZone: [],
+      deckZone: [],
+      cardInHand: [],
+      lifePoint: 8000,
+      isPlayerTurn: true,
+      gameId: 12345,
+    }
 
     // Kiểm tra có phải turn của attacker không
     if (!attackerState.isPlayerTurn) {
@@ -207,18 +285,37 @@ app.post("/battle-monster-vs-monster", (req, res) => {
       ? gameSession.players.player2
       : gameSession.players.player1;
 
-    const defenderState = getPlayerState(defenderId);
+    //const defenderState = getPlayerState(defenderId);
+    const defenderState = {
+      monsterZone: [{
+        "id": "10",
+        "name": "Dark Paladin",
+        "type": "monster",
+        "attribute": "Dark",
+        "archtype": "Spellcaster",
+        "tribute_count": 2,
+        "attack": 2900,
+        "defense": 2400,
+        "level": 8,
+        "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
+        "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+        "effect": "0",
+        "guid_id": "55c7cc38-622b-4dd6-a987-b06283709985",
+        "position": "monster_zone",
+        "mode": "attack"
+      }],
+      spellTrapZone: [],
+      graveZone: [],
+      deckZone: [],
+      cardInHand: [],
+      lifePoint: 8000,
+      isPlayerTurn: false,
+      gameId: 12345,
+    }
 
     // Lấy guid_id từ object
     const attackerGuid = attackerMonsterGuid.guid_id;
     const defenderGuid = defenderMonsterGuid.guid_id;
-
-    console.log("=== BATTLE DEBUG ===");
-    console.log("Attacker GUID:", attackerGuid);
-    console.log("Defender GUID:", defenderGuid);
-    console.log("Attacker Monster Zone:", attackerState.monsterZone.map(m => ({ guid: m.guid_id, name: m.name })));
-    console.log("Defender Monster Zone:", defenderState.monsterZone.map(m => ({ guid: m.guid_id, name: m.name })));
-
     // Tìm quái tấn công trong monsterZone
     const attackerMonster = attackerState.monsterZone.find(
       m => m.guid_id === attackerGuid
@@ -236,9 +333,6 @@ app.post("/battle-monster-vs-monster", (req, res) => {
     if (!defenderMonster) {
       return res.status(404).json({ error: "Defender monster not found in monster zone" });
     }
-
-    console.log("Attacker Monster:", { name: attackerMonster.name, attack: attackerMonster.attack, mode: attackerMonster.mode });
-    console.log("Defender Monster:", { name: defenderMonster.name, attack: defenderMonster.attack, defense: defenderMonster.defense, mode: defenderMonster.mode });
 
     let battleResult = {
       attackerMonster: attackerMonster.name,
@@ -322,11 +416,6 @@ app.post("/battle-monster-vs-monster", (req, res) => {
     } else if (defenderState.lifePoint <= 0) {
       winner = attackerId;
     }
-
-    console.log("=== FINAL RESULT ===");
-    console.log("Battle Result:", battleResult);
-    console.log(`Attacker (${attackerId}): LP=${attackerState.lifePoint}, Monsters=${attackerState.monsterZone.length}, Grave=${attackerState.graveZone.length}`);
-    console.log(`Defender (${defenderId}): LP=${defenderState.lifePoint}, Monsters=${defenderState.monsterZone.length}, Grave=${defenderState.graveZone.length}`);
 
     res.status(200).json({
       battleResult,

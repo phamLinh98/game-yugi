@@ -25,7 +25,7 @@
       "defense": 2000,
       "level": 7,
       "description": "A powerful spellcaster with high attack and defense.",
-      "image_url": "https://i.pinimg.com/1200x/4e/fb/74/4efb7468119107a82c1ca964688eda83.jpg",
+      "image_url": "https://i.pinimg.com/1200x/34/c8/b0/34c8b004841afa7350e48d0072da0e0b.jpg",
       "effect": "0"
     },
     {
@@ -39,7 +39,7 @@
       "defense": 2500,
       "level": 8,
       "description": "A legendary dragon known for its immense power.",
-      "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+      "image_url": "https://i.pinimg.com/1200x/dc/3b/d8/dc3bd8fb7c578fbaef7772be7757592f.jpg",
       "effect": "0"
     },
     {
@@ -53,7 +53,7 @@
       "defense": null,
       "level": null,
       "description": "Destroys all monsters on the field.",
-      "image_url": "https://i.pinimg.com/736x/3b/1a/34/3b1a349a6476dab83337f31b7f92382a.jpg",
+      "image_url": "https://i.pinimg.com/1200x/02/e5/f8/02e5f89d4775f70157a4ac3853905e30.jpg",
       "effect_types": "1"
     },
     {
@@ -67,7 +67,7 @@
       "defense": null,
       "level": null,
       "description": "Destroys 1 spell or trap card on the field.",
-      "image_url": "https://i.pinimg.com/736x/1c/2e/5f/1c2e5f3f4f4e4b6f8e8e8e8e8e8e8e8e.jpg",
+      "image_url": "https://i.pinimg.com/1200x/7e/9b/06/7e9b061ac913718283af8d748feda2e9.jpg",
       "effect_types": "2"
     },
     {
@@ -81,7 +81,7 @@
       "defense": null,
       "level": null,
       "description": "Draw 2 cards from your deck.",
-      "image_url": "https://i.pinimg.com/736x/5d/6e/7f/5d6e7f8e9f0a1b2c3d4e5f6a7b8c9d0e.jpg",
+      "image_url": "https://i.pinimg.com/1200x/e7/b0/bc/e7b0bc56477a61eb72b83411a24faf23.jpg",
       "effect_types": "3"
     },
     {
@@ -95,7 +95,7 @@
       "defense": null,
       "level": null,
       "description": "Negates the attack of all opponent's monsters and destroys them.",
-      "image_url": "https://i.pinimg.com/736x/2a/3b/4c/2a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p.jpg",
+      "image_url": "https://i.pinimg.com/1200x/e3/45/ab/e345ab7178bf1359d964776dafe60e53.jpg",
       "effect_types": "4"
     },
     {
@@ -109,7 +109,7 @@
       "defense": null,
       "level": null,
       "description": "Destroys 1 monster on the field and inflicts damage to both players equal to its attack points.",
-      "image_url": "https://i.pinimg.com/736x/7e/8f/9a/7e8f9a0b1c2d3e4f5g6h7i8j9k0l1m2n.jpg",
+      "image_url": "https://i.pinimg.com/1200x/4e/3d/e2/4e3de2fcb0fbe8421b4e9836138c0732.jpg",
       "effect_types": "5"
     }
   ],
@@ -125,7 +125,7 @@
       "defense": 2400,
       "level": 8,
       "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
-      "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+      "image_url": "https://i.pinimg.com/1200x/9c/fb/63/9cfb637d911d00eb1486d16aa6c4b80d.jpg",
       "effect": "0"
     },
     {
@@ -139,7 +139,7 @@
       "defense": 1200,
       "level": 6,
       "description": "A high attack fiend that can be summoned easily with only one tribute.",
-      "image_url": "https://i.pinimg.com/736x/67/d8/0d/67d80dd57d063da0dffa8b8bc4d07235.jpg",
+      "image_url": "https://i.pinimg.com/1200x/61/4b/c9/614bc9641ece1bc526147bf82a453101.jpg",
       "effect": "0"
     },
     {
@@ -153,7 +153,7 @@
       "defense": 2300,
       "level": 7,
       "description": "Gains 500 attack for each Dragon-type monster on the opponent's field and graveyard.",
-      "image_url": "https://i.pinimg.com/736x/18/08/e4/1808e4585aa87d9e8a82b2a0b1c7d4aa.jpg",
+      "image_url": "https://i.pinimg.com/1200x/a1/cc/39/a1cc398163c6fc87bc5ab8346ae291d5.jpg",
       "effect": "0"
     },
     {
@@ -167,7 +167,7 @@
       "defense": null,
       "level": null,
       "description": "Special summons 1 monster from either player's graveyard.",
-      "image_url": "https://i.pinimg.com/736x/ef/cc/6d/efcc6d6bf5158e5e1aa652c20d76d65b.jpg",
+      "image_url": "https://i.pinimg.com/1200x/e1/65/57/e165576cdb72819f52614876826d7595.jpg",
       "effect_types": "1"
     },
     {
@@ -181,7 +181,7 @@
       "defense": null,
       "level": null,
       "description": "Destroys all opponent's monsters.",
-      "image_url": "https://i.pinimg.com/736x/be/6c/cb/be6ccb2f4501e41c5e31bd05627a6506.jpg",
+      "image_url": "https://i.pinimg.com/1200x/12/10/65/e7/1065e714904fb71bb3d78fcedf2ad762.jpg",
       "effect_types": "2"
     },
     {
@@ -195,7 +195,7 @@
       "defense": null,
       "level": null,
       "description": "Draw 3 cards, then discard 2 cards.",
-      "image_url": "https://i.pinimg.com/736x/ce/3c/9a/ce3c9a7a41e582a330173df20d70fbb8.jpg",
+      "image_url": "https://i.pinimg.com/1200x/42/27/3d/42273d3ad21c02c9349743483a0e58f2.jpg",
       "effect_types": "3"
     },
     {
@@ -209,7 +209,7 @@
       "defense": null,
       "level": null,
       "description": "When a monster is summoned: destroy all monsters on the field.",
-      "image_url": "https://i.pinimg.com/736x/aa/51/28/aa5128df099ff3533fb432658ef6f796.jpg",
+      "image_url": "https://i.pinimg.com/1200x/82/4b/f9/824bf90f3bfeb6a0da8ea1f527f18742.jpg",
       "effect_types": "4"
     },
     {
@@ -223,7 +223,7 @@
       "defense": null,
       "level": null,
       "description": "Negates the attack and inflicts damage to your opponent equal to the attacking monster's attack.",
-      "image_url": "https://i.pinimg.com/736x/f2/aa/49/f2aa49ba3d918de91ad95ac02c368f40.jpg",
+      "image_url": "https://i.pinimg.com/1200x/a7/1b/97/a71b9707e58ce03a4b8b70a7bce966de.jpg",
       "effect_types": "5"
     }
   ],
