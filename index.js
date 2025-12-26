@@ -31,17 +31,17 @@ const effectOfSpellTrap = (cardInfo, playerState, guid) => {
   switch (cardInfo.effect_types) {
     case (cardInfo.effect_types = "1"):
       destroyOneCardOnField(playerState.spellTrapZone, guid);
-      playerState.spellTrapZone = playerState.spellTrapZone.filter(
-        (c) => c.guid_id !== cardInfo.guid_id);
-      playerState.monsterZone = playerState.monsterZone.filter(
-        (c) => c.guid_id !== guid
-      );
       break;
     case (cardInfo.effect_types = "2"):
       destroyAllCard(playerState.spellTrapZone);
       break;
     case (cardInfo.effect_types = "3"):
       destroyOneCardOnField(playerState.monsterZone, guid);
+      playerState.spellTrapZone = playerState.spellTrapZone.filter(
+        (c) => c.guid_id !== cardInfo.guid_id);
+      playerState.monsterZone = playerState.monsterZone.filter(
+        (c) => c.guid_id !== guid
+      );
       break;
     case (cardInfo.effect_types = "4"):
       destroyAllCard(playerState.monsterZone);
