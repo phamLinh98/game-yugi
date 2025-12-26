@@ -1,8 +1,8 @@
 import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import router from "./routers/router.js";
-import corsMiddleware from './middlewares/cors.js';
-import { destroyAllCard } from "./utils/spell-effect.js";
+import corsMiddleware from "./middlewares/cors.js";
+import { destroyAllCard, destroyOneCardOnField } from "./utils/spell-effect.js";
 
 const app = express();
 app.use(express.json());
@@ -27,22 +27,24 @@ const createPlayerState = () => {
   };
 };
 
-const effectOfSpellTrap = (effect) => {
-  let playerState = getPlayerState(player);
-  switch (effect) {
-    case effect = '1': destroyAllCard(playerState.monsterZone);
+const effectOfSpellTrap = (cardInfo, playerState) => {
+  switch (cardInfo.effect_types) {
+    case (cardInfo.effect_types = "1"):
+      destroyOneCardOnField(playerState.spellTrapZone, cardInfo.guid_id);
       break;
-    case effect = '2': destroyAllCard(playerState.spellTrapZone);
+    case (cardInfo.effect_types = "2"):
+      destroyAllCard(playerState.spellTrapZone);
       break;
-    case effect = '3': destroyAllCard(playerState.monsterZone);
+    case (cardInfo.effect_types = "3"):
+      destroyOneCardOnField(playerState.monsterZone, cardInfo.guid_id);
       break;
-    // case effect = '3': destroyAllSpellTrap(array);
-    // break;
-    // case effect = '4': destroyOneSpell(card);
-    // break;
-    default: console.log('No Effect Activity');
+    case (cardInfo.effect_types = "4"):
+      destroyAllCard(playerState.monsterZone);
+      break;
+    default:
+      console.log("No Effect Activity");
   }
-}
+};
 
 // Khởi tạo state cho Player
 const initializePlayer = (playerId) => {
@@ -204,53 +206,55 @@ app.post("/end-turn", (req, res) => {
 });
 
 app.post("/battle-monster-vs-monster", (req, res) => {
-
   const dataMock = {
-    "gameId": "12345",
-    "attackerId": "player1",
-    "attackerMonsterGuid": {
-      "id": "2",
-      "name": "Blue-Eyes White Dragon",
-      "type": "monster",
-      "attribute": "Light",
-      "tribute_count": 2,
-      "archtype": "Dragon",
-      "attack": 3000,
-      "defense": 2500,
-      "level": 8,
-      "description": "A legendary dragon known for its immense power.",
-      "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
-      "effect": "0",
-      "guid_id": "40b772e1-2853-4fce-bd72-65baebdc9cc4",
-      "position": "monster_zone",
-      "mode": "attack"
+    gameId: "12345",
+    attackerId: "player1",
+    attackerMonsterGuid: {
+      id: "2",
+      name: "Blue-Eyes White Dragon",
+      type: "monster",
+      attribute: "Light",
+      tribute_count: 2,
+      archtype: "Dragon",
+      attack: 3000,
+      defense: 2500,
+      level: 8,
+      description: "A legendary dragon known for its immense power.",
+      image_url:
+        "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+      effect: "0",
+      guid_id: "40b772e1-2853-4fce-bd72-65baebdc9cc4",
+      position: "monster_zone",
+      mode: "attack",
     },
-    "defenderMonsterGuid": {
-      "id": "10",
-      "name": "Dark Paladin",
-      "type": "monster",
-      "attribute": "Dark",
-      "archtype": "Spellcaster",
-      "tribute_count": 2,
-      "attack": 2900,
-      "defense": 2400,
-      "level": 8,
-      "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
-      "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
-      "effect": "0",
-      "guid_id": "55c7cc38-622b-4dd6-a987-b06283709985",
-      "position": "monster_zone",
-      "mode": "attack"
-    }
-  }
+    defenderMonsterGuid: {
+      id: "10",
+      name: "Dark Paladin",
+      type: "monster",
+      attribute: "Dark",
+      archtype: "Spellcaster",
+      tribute_count: 2,
+      attack: 2900,
+      defense: 2400,
+      level: 8,
+      description:
+        "A fusion swordsman who cancels and absorbs the power of dragons.",
+      image_url:
+        "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+      effect: "0",
+      guid_id: "55c7cc38-622b-4dd6-a987-b06283709985",
+      position: "monster_zone",
+      mode: "attack",
+    },
+  };
 
   try {
     const {
       gameId,
       attackerId, // ID của player tấn công
       attackerMonsterGuid, // Object chứa toàn bộ data quái tấn công
-      defenderMonsterGuid // Object chứa toàn bộ data quái bị tấn công
-    } = dataMock
+      defenderMonsterGuid, // Object chứa toàn bộ data quái bị tấn công
+    } = dataMock;
 
     //const gameSession = gameSessions.get(gameId);
     const gameSession = {
@@ -269,23 +273,26 @@ app.post("/battle-monster-vs-monster", (req, res) => {
 
     //const attackerState = getPlayerState(attackerId);
     const attackerState = {
-      monsterZone: [{
-        "id": "2",
-        "name": "Blue-Eyes White Dragon",
-        "type": "monster",
-        "attribute": "Light",
-        "tribute_count": 2,
-        "archtype": "Dragon",
-        "attack": 0,
-        "defense": 3000,
-        "level": 8,
-        "description": "A legendary dragon known for its immense power.",
-        "image_url": "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
-        "effect": "0",
-        "guid_id": "40b772e1-2853-4fce-bd72-65baebdc9cc4",
-        "position": "monster_zone",
-        "mode": "attack"
-      }],
+      monsterZone: [
+        {
+          id: "2",
+          name: "Blue-Eyes White Dragon",
+          type: "monster",
+          attribute: "Light",
+          tribute_count: 2,
+          archtype: "Dragon",
+          attack: 0,
+          defense: 3000,
+          level: 8,
+          description: "A legendary dragon known for its immense power.",
+          image_url:
+            "https://i.pinimg.com/736x/48/ae/69/48ae691c6eeed63ed1feaecdbca85e22.jpg",
+          effect: "0",
+          guid_id: "40b772e1-2853-4fce-bd72-65baebdc9cc4",
+          position: "monster_zone",
+          mode: "attack",
+        },
+      ],
       spellTrapZone: [],
       graveZone: [],
       deckZone: [],
@@ -301,29 +308,34 @@ app.post("/battle-monster-vs-monster", (req, res) => {
     }
 
     // Tìm defender
-    const defenderId = gameSession.players.player1 === attackerId
-      ? gameSession.players.player2
-      : gameSession.players.player1;
+    const defenderId =
+      gameSession.players.player1 === attackerId
+        ? gameSession.players.player2
+        : gameSession.players.player1;
 
     //const defenderState = getPlayerState(defenderId);
     const defenderState = {
-      monsterZone: [{
-        "id": "10",
-        "name": "Dark Paladin",
-        "type": "monster",
-        "attribute": "Dark",
-        "archtype": "Spellcaster",
-        "tribute_count": 2,
-        "attack": 2900,
-        "defense": 2400,
-        "level": 8,
-        "description": "A fusion swordsman who cancels and absorbs the power of dragons.",
-        "image_url": "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
-        "effect": "0",
-        "guid_id": "55c7cc38-622b-4dd6-a987-b06283709985",
-        "position": "monster_zone",
-        "mode": "attack"
-      }],
+      monsterZone: [
+        {
+          id: "10",
+          name: "Dark Paladin",
+          type: "monster",
+          attribute: "Dark",
+          archtype: "Spellcaster",
+          tribute_count: 2,
+          attack: 2900,
+          defense: 2400,
+          level: 8,
+          description:
+            "A fusion swordsman who cancels and absorbs the power of dragons.",
+          image_url:
+            "https://i.pinimg.com/736x/09/2c/8a/092c8a72710a998d92d4d4314a1c0f64.jpg",
+          effect: "0",
+          guid_id: "55c7cc38-622b-4dd6-a987-b06283709985",
+          position: "monster_zone",
+          mode: "attack",
+        },
+      ],
       spellTrapZone: [],
       graveZone: [],
       deckZone: [],
@@ -331,27 +343,31 @@ app.post("/battle-monster-vs-monster", (req, res) => {
       lifePoint: 8000,
       isPlayerTurn: false,
       gameId: 12345,
-    }
+    };
 
     // Lấy guid_id từ object
     const attackerGuid = attackerMonsterGuid.guid_id;
     const defenderGuid = defenderMonsterGuid.guid_id;
     // Tìm quái tấn công trong monsterZone
     const attackerMonster = attackerState.monsterZone.find(
-      m => m.guid_id === attackerGuid
+      (m) => m.guid_id === attackerGuid
     );
 
     if (!attackerMonster) {
-      return res.status(404).json({ error: "Attacker monster not found in monster zone" });
+      return res
+        .status(404)
+        .json({ error: "Attacker monster not found in monster zone" });
     }
 
     // Tìm quái bị tấn công trong monsterZone
     const defenderMonster = defenderState.monsterZone.find(
-      m => m.guid_id === defenderGuid
+      (m) => m.guid_id === defenderGuid
     );
 
     if (!defenderMonster) {
-      return res.status(404).json({ error: "Defender monster not found in monster zone" });
+      return res
+        .status(404)
+        .json({ error: "Defender monster not found in monster zone" });
     }
 
     let battleResult = {
@@ -375,9 +391,8 @@ app.post("/battle-monster-vs-monster", (req, res) => {
         // Gửi quái bị hủy vào graveyard
         defenderState.graveZone.push(defenderMonster);
         defenderState.monsterZone = defenderState.monsterZone.filter(
-          m => m.guid_id !== defenderGuid
+          (m) => m.guid_id !== defenderGuid
         );
-
       } else if (attackDiff < 0) {
         // Defender thắng
         attackerState.lifePoint -= Math.abs(attackDiff);
@@ -387,21 +402,23 @@ app.post("/battle-monster-vs-monster", (req, res) => {
         // Gửi quái tấn công vào graveyard
         attackerState.graveZone.push(attackerMonster);
         attackerState.monsterZone = attackerState.monsterZone.filter(
-          m => m.guid_id !== attackerGuid
+          (m) => m.guid_id !== attackerGuid
         );
-
       } else {
         // Hòa - cả 2 bị hủy
-        battleResult.destroyedMonsters.push(attackerMonster.name, defenderMonster.name);
+        battleResult.destroyedMonsters.push(
+          attackerMonster.name,
+          defenderMonster.name
+        );
 
         attackerState.graveZone.push(attackerMonster);
         attackerState.monsterZone = attackerState.monsterZone.filter(
-          m => m.guid_id !== attackerGuid
+          (m) => m.guid_id !== attackerGuid
         );
 
         defenderState.graveZone.push(defenderMonster);
         defenderState.monsterZone = defenderState.monsterZone.filter(
-          m => m.guid_id !== defenderGuid
+          (m) => m.guid_id !== defenderGuid
         );
       }
     }
@@ -415,7 +432,7 @@ app.post("/battle-monster-vs-monster", (req, res) => {
 
         defenderState.graveZone.push(defenderMonster);
         defenderState.monsterZone = defenderState.monsterZone.filter(
-          m => m.guid_id !== defenderGuid
+          (m) => m.guid_id !== defenderGuid
         );
 
       } else if (attackVsDefense < 0) {
@@ -530,11 +547,14 @@ app.get("/set-card-to-field", async (req, res) => {
     }
     for (const card of playerState.spellTrapZone) {
       card.position = "spell_trap_zone";
-      if(card.status === 'set'){{
-         console.log('Effect Set Chua Kich Hoat');
-      }}
-      if(card.status === 'open'){
-        effectOfSpellTrap(card.effect_types);
+      if (card.status === "set") {
+        {
+          console.log("Effect Set Chua Kich Hoat");
+        }
+      }
+      if (card.status === "open") {
+        effectOfSpellTrap(card, playerState);
+        playerState.graveZone.push(card);
       }
     }
 
@@ -566,18 +586,10 @@ app.post("/status-card-in-field", async (req, res) => {
     }
     // Check type và add vào mảng tương ứng
     if (card.type === "monster") {
-      if (status === 'set') {
-        card.status = 'set'; // hoặc card.faceDown = true
-      } else {
-        card.status = 'open'; // hoặc 'defense' tùy logic game
-      }
+      card.status = status === "set" ? "set" : "open";
       playerState.monsterZone.push(card);
     } else {
-      if (status === 'set') {
-        card.status = 'set'; // hoặc card.faceDown = true
-      } else {
-        card.status = 'open'; // hoặc 'defense' tùy logic game
-      }
+      card.status = status === "set" ? "set" : "open";
       playerState.spellTrapZone.push(card);
     }
     // Loại bỏ thẻ khỏi tay người chơi

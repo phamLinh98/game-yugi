@@ -2,9 +2,9 @@ export const destroyAllCard = (array) => {
     array.splice(0, array.length);
 }
 
-export const destroyOneMonster = (card) => {
-    const index = hand.findIndex(c => c.guid_id === card.guid_id);
+export const destroyOneCardOnField = (array, guid) => {
+    const index = array.findIndex(card => card.guid_id === guid);
     if (index !== -1) {
-        hand.splice(index, 1);
+        array.splice(index, 1);
     }
 }
