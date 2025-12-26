@@ -2,6 +2,8 @@ import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import router from "./routers/router.js";
 import corsMiddleware from './middlewares/cors.js';
+import { destroyAllCard } from "./utils/spell-effect.js";
+
 const app = express();
 app.use(express.json());
 app.use(corsMiddleware);
@@ -25,6 +27,23 @@ const createPlayerState = () => {
   };
 };
 
+const effectOfSpellTrap = (effect) => {
+  let playerState = getPlayerState(player);
+  switch (effect) {
+    case effect = '1': destroyAllCard(playerState.monsterZone);
+      break;
+    case effect = '2': destroyAllCard(playerState.spellTrapZone);
+      break;
+    case effect = '3': destroyAllCard(playerState.monsterZone);
+      break;
+    // case effect = '3': destroyAllSpellTrap(array);
+    // break;
+    // case effect = '4': destroyOneSpell(card);
+    // break;
+    default: console.log('No Effect Activity');
+  }
+}
+
 // Khởi tạo state cho Player
 const initializePlayer = (playerId) => {
   {
@@ -40,7 +59,8 @@ const getPlayerState = (playerId) => {
   return playerGameStates.get(playerId);
 };
 
-const createGameSession = (gameId, player1, player2, firstPlayer) => {
+const createGameSession = (gameSession) => {
+  const { gameId, player1, player2, firstPlayer } = gameSession;
   return {
     gameId,
     players: {
@@ -184,7 +204,7 @@ app.post("/end-turn", (req, res) => {
 });
 
 app.post("/battle-monster-vs-monster", (req, res) => {
-  
+
   const dataMock = {
     "gameId": "12345",
     "attackerId": "player1",
@@ -503,18 +523,25 @@ app.get("/set-card-to-field", async (req, res) => {
   try {
     const { player, mode } = req.query;
     let playerState = getPlayerState(player);
+
     for (const card of playerState.monsterZone) {
       card.position = "monster_zone";
       card.mode = mode;
     }
-
     for (const card of playerState.spellTrapZone) {
       card.position = "spell_trap_zone";
+      if(card.status === 'set'){{
+         console.log('Effect Set Chua Kich Hoat');
+      }}
+      if(card.status === 'open'){
+        effectOfSpellTrap(card.effect_types);
+      }
     }
 
     for (const card of playerState.graveZone) {
       card.position = "grave_zone";
     }
+
     res.status(200).json({
       monsterZone: playerState.monsterZone,
       spellTrapZone: playerState.spellTrapZone,
@@ -529,10 +556,9 @@ app.get("/set-card-to-field", async (req, res) => {
 
 app.post("/status-card-in-field", async (req, res) => {
   try {
-    const card = req.body;
+    const { card, status } = req.body;
     const player = req.query.player;
     let playerState = getPlayerState(player);
-
     const { guid_id: guid_id } = card;
     // Kiểm tra card có tồn tại không
     if (!card || !card.type) {
@@ -540,8 +566,18 @@ app.post("/status-card-in-field", async (req, res) => {
     }
     // Check type và add vào mảng tương ứng
     if (card.type === "monster") {
+      if (status === 'set') {
+        card.status = 'set'; // hoặc card.faceDown = true
+      } else {
+        card.status = 'open'; // hoặc 'defense' tùy logic game
+      }
       playerState.monsterZone.push(card);
     } else {
+      if (status === 'set') {
+        card.status = 'set'; // hoặc card.faceDown = true
+      } else {
+        card.status = 'open'; // hoặc 'defense' tùy logic game
+      }
       playerState.spellTrapZone.push(card);
     }
     // Loại bỏ thẻ khỏi tay người chơi
