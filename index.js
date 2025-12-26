@@ -27,27 +27,52 @@ const createPlayerState = () => {
   };
 };
 
-const effectOfSpellTrap = (cardInfo, playerState, guid) => {
+const effectOfSpellTrap = (cardInfo, playerState, opponentState, targetGuid) => {
   switch (cardInfo.effect_types) {
-    case (cardInfo.effect_types = "1"):
-      destroyOneCardOnField(playerState.spellTrapZone, guid);
-      break;
-    case (cardInfo.effect_types = "2"):
-      destroyAllCard(playerState.spellTrapZone);
-      break;
-    case (cardInfo.effect_types = "3"):
-      destroyOneCardOnField(playerState.monsterZone, guid);
-      playerState.spellTrapZone = playerState.spellTrapZone.filter(
-        (c) => c.guid_id !== cardInfo.guid_id);
-      playerState.monsterZone = playerState.monsterZone.filter(
-        (c) => c.guid_id !== guid
+    case "1": // Destroy 1 spell/trap của đối thủ
+      opponentState.spellTrapZone = opponentState.spellTrapZone.filter(
+        (c) => c.guid_id !== targetGuid
       );
+      // Gửi card vào grave của đối thủ
+      const destroyedSpell = opponentState.spellTrapZone.find(c => c.guid_id === targetGuid);
+      if (destroyedSpell) opponentState.graveZone.push(destroyedSpell);
       break;
-    case (cardInfo.effect_types = "4"):
-      destroyAllCard(playerState.monsterZone);
+
+    case "2": // Destroy all spell/trap của đối thủ
+      opponentState.graveZone.push(...opponentState.spellTrapZone);
+      opponentState.spellTrapZone = [];
       break;
+
+    case "3": // Destroy 1 monster của đối thủ
+      const destroyedMonster = opponentState.monsterZone.find(
+        (c) => c.guid_id === targetGuid
+      );
+      if (destroyedMonster) {
+        opponentState.monsterZone = opponentState.monsterZone.filter(
+          (c) => c.guid_id !== targetGuid
+        );
+        opponentState.graveZone.push(destroyedMonster);
+      }
+      break;
+
+    case "4": // Destroy all monsters của đối thủ
+      opponentState.graveZone.push(...opponentState.monsterZone);
+      opponentState.monsterZone = [];
+      break;
+
     default:
       console.log("No Effect Activity");
+  }
+
+  // Gửi spell card của mình xuống mộ
+  const usedSpell = playerState.spellTrapZone.find(
+    (c) => c.guid_id === cardInfo.guid_id
+  );
+  if (usedSpell) {
+    playerState.spellTrapZone = playerState.spellTrapZone.filter(
+      (c) => c.guid_id !== cardInfo.guid_id
+    );
+    playerState.graveZone.push(usedSpell);
   }
 };
 
@@ -543,28 +568,30 @@ app.get("/get-first-5-cards", async (req, res) => {
 
 app.get("/set-card-to-field", async (req, res) => {
   try {
-    const { player, mode, guid } = req.query;
+    const { player, mode, guid, targetGuid } = req.query; // Thêm targetGuid
     let playerState = getPlayerState(player);
 
+    // Tìm opponent
+    const gameId = playerState.gameId;
+    const gameSession = gameSessions.get(gameId);
+    const opponentId = gameSession.players.player1 === player
+      ? gameSession.players.player2
+      : gameSession.players.player1;
+    let opponentState = getPlayerState(opponentId);
+
+    // Set position cho monster zone
     for (const card of playerState.monsterZone) {
       card.position = "monster_zone";
       card.mode = mode;
     }
+
+    // Xử lý spell/trap
     for (const card of playerState.spellTrapZone) {
       card.position = "spell_trap_zone";
-      if (card.status === "set") {
-        {
-          console.log("Effect Set Chua Kich Hoat");
-        }
-      }
-      if (card.status === "open") {
-        console.log(card);
-        console.log(playerState);
-        effectOfSpellTrap(card, playerState, guid);
-        playerState.spellTrapZone = playerState.spellTrapZone.filter(
-          (c) => c.guid_id !== guid
-        );
-        playerState.graveZone.push(card);
+
+      if (card.status === "open" && card.guid_id === guid) {
+        console.log("Activating spell:", card);
+        effectOfSpellTrap(card, playerState, opponentState, targetGuid);
       }
     }
 
@@ -573,13 +600,19 @@ app.get("/set-card-to-field", async (req, res) => {
     }
 
     res.status(200).json({
-      monsterZone: playerState.monsterZone,
-      spellTrapZone: playerState.spellTrapZone,
-      graveZone: playerState.graveZone,
-      deckZone: player.deckZone,
-      cardInHand: player.cardInHand,
+      player: {
+        monsterZone: playerState.monsterZone,
+        spellTrapZone: playerState.spellTrapZone,
+        graveZone: playerState.graveZone,
+      },
+      opponent: {
+        monsterZone: opponentState.monsterZone,
+        spellTrapZone: opponentState.spellTrapZone,
+        graveZone: opponentState.graveZone,
+      }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "No data To Show Cards" });
   }
 });
