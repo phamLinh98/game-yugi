@@ -1,13 +1,12 @@
 import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
-import router from "./routers/router.js";
+import * as deckController from "./controllers/deck-controllers.js";
 import corsMiddleware from "./middlewares/cors.js";
 import { destroyAllCard, destroyOneCardOnField } from "./utils/spell-effect.js";
 
 const app = express();
 app.use(express.json());
 app.use(corsMiddleware);
-app.use(router);
 const port = 3000;
 
 const playerGameStates = new Map();
@@ -104,6 +103,8 @@ const createGameSession = (gameSession) => {
     battlePhase: false,
   };
 };
+
+app.get('/deck', deckController.getDeckController);
 
 app.get("/card-remain-in-deck", async (req, res) => {
   try {
