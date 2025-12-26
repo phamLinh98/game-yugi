@@ -8,3 +8,5 @@ export const destroyOneCardOnField = (array, guid) => {
         array.splice(index, 1);
     }
 }
+
+//array và guid đều trả về cùng 1 string 'eae44112-ba7e-4057-bbad-8a5525e049ba'

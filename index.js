@@ -27,16 +27,21 @@ const createPlayerState = () => {
   };
 };
 
-const effectOfSpellTrap = (cardInfo, playerState) => {
+const effectOfSpellTrap = (cardInfo, playerState, guid) => {
   switch (cardInfo.effect_types) {
     case (cardInfo.effect_types = "1"):
-      destroyOneCardOnField(playerState.spellTrapZone, cardInfo.guid_id);
+      destroyOneCardOnField(playerState.spellTrapZone, guid);
+      playerState.spellTrapZone = playerState.spellTrapZone.filter(
+        (c) => c.guid_id !== cardInfo.guid_id);
+      playerState.monsterZone = playerState.monsterZone.filter(
+        (c) => c.guid_id !== guid
+      );
       break;
     case (cardInfo.effect_types = "2"):
       destroyAllCard(playerState.spellTrapZone);
       break;
     case (cardInfo.effect_types = "3"):
-      destroyOneCardOnField(playerState.monsterZone, cardInfo.guid_id);
+      destroyOneCardOnField(playerState.monsterZone, guid);
       break;
     case (cardInfo.effect_types = "4"):
       destroyAllCard(playerState.monsterZone);
@@ -538,7 +543,7 @@ app.get("/get-first-5-cards", async (req, res) => {
 
 app.get("/set-card-to-field", async (req, res) => {
   try {
-    const { player, mode } = req.query;
+    const { player, mode, guid } = req.query;
     let playerState = getPlayerState(player);
 
     for (const card of playerState.monsterZone) {
@@ -553,7 +558,12 @@ app.get("/set-card-to-field", async (req, res) => {
         }
       }
       if (card.status === "open") {
-        effectOfSpellTrap(card, playerState);
+        console.log(card);
+        console.log(playerState);
+        effectOfSpellTrap(card, playerState, guid);
+        playerState.spellTrapZone = playerState.spellTrapZone.filter(
+          (c) => c.guid_id !== guid
+        );
         playerState.graveZone.push(card);
       }
     }
