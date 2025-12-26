@@ -121,8 +121,8 @@ app.get("/card-remain-in-deck", async (req, res) => {
     // Chưa có thì mới khởi tạo
     playerState = initializePlayer(player);
 
-    //const data = await fetch(`https://game-yugi.vercel.app/deck?player=${player}`);
-    const data = await fetch(`http://localhost:4000/${player}`);
+    const data = await fetch(`https://game-yugi-k2zl.vercel.app//deck?player=${player}`);
+    //const data = await fetch(`http://localhost:4000/${player}`);
     const cardData = await data.json();
     const cardsRemainInDeck = cardData.map((card) => ({
       ...card,
