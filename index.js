@@ -2,7 +2,6 @@ import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import * as deckController from "./controllers/deck-controllers.js";
 import corsMiddleware from "./middlewares/cors.js";
-import { destroyAllCard, destroyOneCardOnField } from "./utils/spell-effect.js";
 
 const app = express();
 app.use(express.json());
