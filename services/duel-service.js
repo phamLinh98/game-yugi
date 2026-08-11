@@ -125,7 +125,7 @@ export const performAction = async (playerName, action, payload = {}) => {
           ...player.graveyard,
           ...player.field.monsters,
           ...player.field.spellsTraps,
-        ].map(({ position, mode, status, has_attacked, effect_negated, effective_attack, ...card }) => withGuid(card));
+        ].map(({ position, mode, status, has_attacked, effect_negated, effective_attack, activation_pending, activation_started_at, activation_target_guid, ...card }) => withGuid(card));
         player.deck = cards.sort(() => Math.random() - 0.5);
         player.hand = [];
         player.graveyard = [];
@@ -226,9 +226,36 @@ export const performAction = async (playerName, action, payload = {}) => {
     if (!card) throw Object.assign(new Error('Không tìm thấy lá bài để kích hoạt'), { statusCode: 404 });
     if (card.type !== 'trap') requireTurn(self, shared, ['MP1', 'MP2']);
     if (card.type === 'trap' && fromHand) throw Object.assign(new Error('Trap phải được úp trên sân trước khi kích hoạt'), { statusCode: 409 });
-    const effectMessage = resolveEffect({ self, opponent, card, payload });
-    if (card.type === 'spell' || card.type === 'trap') {
+    if (self.field.spellsTraps.some((item) => item.activation_pending)) {
+      throw Object.assign(new Error('Hãy chờ lá bài đang kích hoạt resolve'), { statusCode: 409 });
+    }
+    if (fromHand && card.type === 'spell') {
+      if (self.field.spellsTraps.length >= 5) throw Object.assign(new Error('Spell/Trap zone đã đầy'), { statusCode: 409 });
       self.hand = self.hand.filter((item) => item.guid_id !== card.guid_id);
+      self.field.spellsTraps.push(card);
+    }
+    card.status = 'open';
+    card.activation_pending = true;
+    card.activation_started_at = Date.now();
+    card.activation_target_guid = payload.targetGuid || null;
+    shared.lastAction = `${card.name} đang kích hoạt`;
+  } else if (action === 'RESOLVE_CARD') {
+    let card = self.field.spellsTraps.find((item) => item.guid_id === payload.cardGuid && item.activation_pending);
+    if (!card) card = self.field.monsters.find((item) => item.guid_id === payload.cardGuid && item.activation_pending);
+    if (!card) throw Object.assign(new Error('Không tìm thấy card đang chờ resolve'), { statusCode: 404 });
+    if (Date.now() - Number(card.activation_started_at || 0) < 800) {
+      throw Object.assign(new Error('Card cần hiển thị tối thiểu 1 giây'), { statusCode: 409 });
+    }
+    const effectMessage = resolveEffect({
+      self,
+      opponent,
+      card,
+      payload: { targetGuid: card.activation_target_guid || payload.targetGuid },
+    });
+    delete card.activation_pending;
+    delete card.activation_started_at;
+    delete card.activation_target_guid;
+    if (card.type === 'spell' || card.type === 'trap') {
       self.field.spellsTraps = self.field.spellsTraps.filter((item) => item.guid_id !== card.guid_id);
       self.graveyard.push({ ...card, status: 'open' });
     }
@@ -261,7 +288,7 @@ const allOwnedCards = (player) => [
 export const getDeckEditor = async (playerName) => {
   const { self, opponent } = await loadGame(playerName);
   const clean = (card) => {
-    const { position, mode, status, has_attacked, effect_negated, effective_attack, ...result } = card;
+    const { position, mode, status, has_attacked, effect_negated, effective_attack, activation_pending, activation_started_at, activation_target_guid, ...result } = card;
     return result;
   };
   const deck = allOwnedCards(self).map(clean);
@@ -273,7 +300,7 @@ export const addCardToDeck = async (playerName, cardId) => {
   const { self, opponent, shared } = await loadGame(playerName);
   const source = [...allOwnedCards(self), ...allOwnedCards(opponent)].find((card) => Number(card.id) === Number(cardId));
   if (!source) throw Object.assign(new Error('Không tìm thấy card trong catalog'), { statusCode: 404 });
-  const { position, mode, status, has_attacked, effect_negated, effective_attack, ...card } = source;
+  const { position, mode, status, has_attacked, effect_negated, effective_attack, activation_pending, activation_started_at, activation_target_guid, ...card } = source;
   self.deck.push(withGuid(card));
   await persist(self, shared);
   return getDeckEditor(playerName);
