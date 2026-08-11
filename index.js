@@ -2,7 +2,7 @@ import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import * as deckController from "./controllers/deck-controllers.js";
 import corsMiddleware from "./middlewares/cors.js";
-import { getDuelState, performAction } from './services/duel-service.js';
+import { addCardToDeck, getDeckEditor, getDuelState, performAction } from './services/duel-service.js';
 
 const app = express();
 app.use(express.json());
@@ -120,6 +120,22 @@ app.post('/duel/action', async (req, res) => {
     return res.json(await performAction(String(player || ''), String(action || ''), payload));
   } catch (error) {
     return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to update duel' });
+  }
+});
+
+app.get('/duel/deck-editor', async (req, res) => {
+  try {
+    return res.json(await getDeckEditor(String(req.query.player || '')));
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to load deck' });
+  }
+});
+
+app.post('/duel/deck-editor/add', async (req, res) => {
+  try {
+    return res.json(await addCardToDeck(String(req.body?.player || ''), req.body?.cardId));
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to add card' });
   }
 });
 

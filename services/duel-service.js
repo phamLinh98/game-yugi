@@ -37,6 +37,9 @@ const persist = async (player, shared) => {
       phase = ${shared.phase},
       current_turn = ${shared.currentTurn},
       turn_count = ${shared.turnCount},
+      game_status = ${shared.status},
+      winner = ${shared.winner},
+      end_reason = ${shared.endReason},
       updated_at = NOW()
     WHERE player = ${player.player}
   `;
@@ -67,6 +70,9 @@ const loadGame = async (playerName) => {
     phase: PHASES.includes(self.phase) ? self.phase : 'SP',
     currentTurn: self.current_turn || players[0].player,
     turnCount: Number(self.turn_count || 1),
+    status: self.game_status || 'ACTIVE',
+    winner: self.winner || null,
+    endReason: self.end_reason || null,
   };
   return { self, opponent, shared };
 };
@@ -87,6 +93,9 @@ export const getDuelState = async (playerName) => {
     phases: PHASES,
     currentTurn: game.shared.currentTurn,
     turnCount: game.shared.turnCount,
+    status: game.shared.status,
+    winner: game.shared.winner,
+    endReason: game.shared.endReason,
     canAct: game.shared.currentTurn === playerName,
     self: publicPlayer(game.self, game.opponent, true),
     opponent: publicPlayer(game.opponent, game.self, false),
@@ -107,7 +116,40 @@ const takeCard = (cards, guid) => {
 export const performAction = async (playerName, action, payload = {}) => {
   const { self, opponent, shared } = await loadGame(playerName);
 
-  if (action === 'CHANGE_PHASE') {
+  if (action === 'START_DUEL') {
+    if (shared.status === 'FINISHED') {
+      const resetPlayer = (player) => {
+        const cards = [
+          ...player.deck,
+          ...player.hand,
+          ...player.graveyard,
+          ...player.field.monsters,
+          ...player.field.spellsTraps,
+        ].map(({ position, mode, status, has_attacked, effect_negated, effective_attack, ...card }) => withGuid(card));
+        player.deck = cards.sort(() => Math.random() - 0.5);
+        player.hand = [];
+        player.graveyard = [];
+        player.field = { monsters: [], spellsTraps: [] };
+        player.lifepoint = 8000;
+      };
+      resetPlayer(self);
+      resetPlayer(opponent);
+      shared.phase = 'SP';
+      shared.currentTurn = 'player1';
+      shared.turnCount = 1;
+      shared.status = 'ACTIVE';
+      shared.winner = null;
+      shared.endReason = null;
+    }
+  } else if (shared.status === 'FINISHED') {
+    throw Object.assign(new Error('Trận đấu đã kết thúc'), { statusCode: 409 });
+  } else if (action === 'SURRENDER') {
+    self.lifepoint = 0;
+    shared.status = 'FINISHED';
+    shared.winner = opponent.player;
+    shared.endReason = 'SURRENDER';
+
+  } else if (action === 'CHANGE_PHASE') {
     requireTurn(self, shared);
     const currentIndex = PHASES.indexOf(shared.phase);
     const requested = String(payload.phase || '').toUpperCase();
@@ -142,15 +184,6 @@ export const performAction = async (playerName, action, payload = {}) => {
     if (!card) throw Object.assign(new Error('Không tìm thấy quái thú'), { statusCode: 404 });
     card.mode = card.mode === 'attack' ? 'defense' : 'attack';
     card.status = 'open';
-  } else if (action === 'SEND_GRAVE') {
-    requireTurn(self, shared, ['MP1', 'BF', 'MP2']);
-    let card;
-    const monsterIndex = self.field.monsters.findIndex((item) => item.guid_id === payload.cardGuid);
-    if (monsterIndex >= 0) card = self.field.monsters.splice(monsterIndex, 1)[0];
-    const trapIndex = self.field.spellsTraps.findIndex((item) => item.guid_id === payload.cardGuid);
-    if (!card && trapIndex >= 0) card = self.field.spellsTraps.splice(trapIndex, 1)[0];
-    if (!card) throw Object.assign(new Error('Không tìm thấy lá bài trên sân'), { statusCode: 404 });
-    self.graveyard.push(card);
   } else if (action === 'ATTACK') {
     requireTurn(self, shared, ['BF']);
     const attacker = self.field.monsters.find((item) => item.guid_id === payload.cardGuid);
@@ -204,7 +237,44 @@ export const performAction = async (playerName, action, payload = {}) => {
     throw Object.assign(new Error('Hành động không hợp lệ'), { statusCode: 400 });
   }
 
+  if (shared.status !== 'FINISHED' && (self.lifepoint <= 0 || opponent.lifepoint <= 0)) {
+    shared.status = 'FINISHED';
+    shared.winner = self.lifepoint > opponent.lifepoint
+      ? self.player
+      : opponent.lifepoint > self.lifepoint ? opponent.player : null;
+    shared.endReason = 'LIFE_POINT_ZERO';
+  }
+
   await Promise.all([persist(self, shared), persist(opponent, shared)]);
   const state = await getDuelState(playerName);
   return { ...state, effectMessage: shared.lastAction || null };
+};
+
+const allOwnedCards = (player) => [
+  ...player.deck,
+  ...player.hand,
+  ...player.graveyard,
+  ...player.field.monsters,
+  ...player.field.spellsTraps,
+];
+
+export const getDeckEditor = async (playerName) => {
+  const { self, opponent } = await loadGame(playerName);
+  const clean = (card) => {
+    const { position, mode, status, has_attacked, effect_negated, effective_attack, ...result } = card;
+    return result;
+  };
+  const deck = allOwnedCards(self).map(clean);
+  const catalogMap = new Map([...allOwnedCards(self), ...allOwnedCards(opponent)].map((card) => [card.id, clean(card)]));
+  return { player: self.player, deck, catalog: [...catalogMap.values()] };
+};
+
+export const addCardToDeck = async (playerName, cardId) => {
+  const { self, opponent, shared } = await loadGame(playerName);
+  const source = [...allOwnedCards(self), ...allOwnedCards(opponent)].find((card) => Number(card.id) === Number(cardId));
+  if (!source) throw Object.assign(new Error('Không tìm thấy card trong catalog'), { statusCode: 404 });
+  const { position, mode, status, has_attacked, effect_negated, effective_attack, ...card } = source;
+  self.deck.push(withGuid(card));
+  await persist(self, shared);
+  return getDeckEditor(playerName);
 };

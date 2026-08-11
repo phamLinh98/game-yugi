@@ -1,3 +1,5 @@
 node_modules/
 .env
 envConfigDomain.js
+.vercel
+.env*.local
