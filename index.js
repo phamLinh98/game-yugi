@@ -2,6 +2,7 @@ import express from "express";
 import { shuffleDeck } from "./utils/shuffle-deck.js";
 import * as deckController from "./controllers/deck-controllers.js";
 import corsMiddleware from "./middlewares/cors.js";
+import { getDuelState, performAction } from './services/duel-service.js';
 
 const app = express();
 app.use(express.json());
@@ -104,6 +105,23 @@ const createGameSession = (gameSession) => {
 };
 
 app.get('/deck', deckController.getDeckController);
+
+app.get('/duel/state', async (req, res) => {
+  try {
+    return res.json(await getDuelState(String(req.query.player || '')));
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to load duel' });
+  }
+});
+
+app.post('/duel/action', async (req, res) => {
+  try {
+    const { player, action, ...payload } = req.body || {};
+    return res.json(await performAction(String(player || ''), String(action || ''), payload));
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to update duel' });
+  }
+});
 
 app.get("/card-remain-in-deck", async (req, res) => {
   try {
@@ -814,6 +832,10 @@ app.get("/card-in-deck-list", (req, res) => {
   res.status(200).json(playerState.deckZone);
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`);
+  });
+}

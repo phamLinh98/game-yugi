@@ -1,10 +1,15 @@
 import cors from "cors";
 
-const allowedOrigins = ['http://localhost:4000', "http://127.0.0.1:5500"]; // Thêm các origin được phép
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:4000',
+    'http://127.0.0.1:5500',
+];
 
 const corsOptions = {
     origin: (origin, callback) => {
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) { // cho phép các request không có origin ( ví dụ: server to server request)
+        const isGameFrontend = origin && /^https:\/\/game-ygo-theme(?:-[a-z0-9-]+)?\.vercel\.app$/.test(origin);
+        if (allowedOrigins.includes(origin) || isGameFrontend || !origin) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
