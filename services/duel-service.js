@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import sql from '../configs/db.js';
+import { effectAttack, resolveEffect } from './effect-engine.js';
 
 export const PHASES = ['SP', 'DP', 'MP1', 'BF', 'MP2', 'EP'];
 
@@ -41,14 +42,20 @@ const persist = async (player, shared) => {
   `;
 };
 
-const publicPlayer = (player, isSelf) => ({
+const publicPlayer = (player, opponent, isSelf) => ({
   player: player.player,
   lifepoint: player.lifepoint,
   deckCount: player.deck.length,
   hand: isSelf ? player.hand : player.hand.map(() => ({ hidden: true })),
   handCount: player.hand.length,
   graveyard: player.graveyard,
-  field: player.field,
+  field: {
+    ...player.field,
+    monsters: player.field.monsters.map((card) => ({
+      ...card,
+      effective_attack: effectAttack(card, player, opponent),
+    })),
+  },
 });
 
 const loadGame = async (playerName) => {
@@ -81,8 +88,8 @@ export const getDuelState = async (playerName) => {
     currentTurn: game.shared.currentTurn,
     turnCount: game.shared.turnCount,
     canAct: game.shared.currentTurn === playerName,
-    self: publicPlayer(game.self, true),
-    opponent: publicPlayer(game.opponent, false),
+    self: publicPlayer(game.self, game.opponent, true),
+    opponent: publicPlayer(game.opponent, game.self, false),
   };
 };
 
@@ -152,10 +159,12 @@ export const performAction = async (playerName, action, payload = {}) => {
     attacker.has_attacked = true;
     if (!defender) {
       if (opponent.field.monsters.length) throw Object.assign(new Error('Phải chọn quái thú đối thủ'), { statusCode: 409 });
-      opponent.lifepoint = Math.max(0, opponent.lifepoint - Number(attacker.attack || 0));
+      opponent.lifepoint = Math.max(0, opponent.lifepoint - effectAttack(attacker, self, opponent));
     } else {
-      const defenseValue = defender.mode === 'defense' ? Number(defender.defense || 0) : Number(defender.attack || 0);
-      const diff = Number(attacker.attack || 0) - defenseValue;
+      const defenseValue = defender.mode === 'defense'
+        ? Number(defender.defense || 0)
+        : effectAttack(defender, opponent, self);
+      const diff = effectAttack(attacker, self, opponent) - defenseValue;
       if (diff > 0) {
         opponent.field.monsters = opponent.field.monsters.filter((item) => item.guid_id !== defender.guid_id);
         opponent.graveyard.push(defender);
@@ -173,26 +182,29 @@ export const performAction = async (playerName, action, payload = {}) => {
         opponent.graveyard.push(defender);
       }
     }
-  } else if (action === 'ACTIVATE_TRAP') {
-    const trap = self.field.spellsTraps.find((item) => item.guid_id === payload.cardGuid && item.type === 'trap');
-    if (!trap) throw Object.assign(new Error('Không tìm thấy bài bẫy đã úp'), { statusCode: 404 });
-    // Trap là ngoại lệ duy nhất được kích hoạt ngoài lượt. Mirror Force/Ring xử lý quái mục tiêu.
-    if (trap.effect_types === '4') {
-      opponent.graveyard.push(...opponent.field.monsters);
-      opponent.field.monsters = [];
-    } else if (payload.targetGuid) {
-      const target = opponent.field.monsters.find((item) => item.guid_id === payload.targetGuid);
-      if (target) {
-        opponent.field.monsters = opponent.field.monsters.filter((item) => item.guid_id !== target.guid_id);
-        opponent.graveyard.push(target);
-      }
+  } else if (action === 'ACTIVATE_CARD' || action === 'ACTIVATE_TRAP') {
+    let card = self.field.spellsTraps.find((item) => item.guid_id === payload.cardGuid);
+    let fromHand = false;
+    if (!card) {
+      card = self.hand.find((item) => item.guid_id === payload.cardGuid);
+      fromHand = Boolean(card);
     }
-    self.field.spellsTraps = self.field.spellsTraps.filter((item) => item.guid_id !== trap.guid_id);
-    self.graveyard.push({ ...trap, status: 'open' });
+    if (!card && action === 'ACTIVATE_CARD') card = self.field.monsters.find((item) => item.guid_id === payload.cardGuid);
+    if (!card) throw Object.assign(new Error('Không tìm thấy lá bài để kích hoạt'), { statusCode: 404 });
+    if (card.type !== 'trap') requireTurn(self, shared, ['MP1', 'MP2']);
+    if (card.type === 'trap' && fromHand) throw Object.assign(new Error('Trap phải được úp trên sân trước khi kích hoạt'), { statusCode: 409 });
+    const effectMessage = resolveEffect({ self, opponent, card, payload });
+    if (card.type === 'spell' || card.type === 'trap') {
+      self.hand = self.hand.filter((item) => item.guid_id !== card.guid_id);
+      self.field.spellsTraps = self.field.spellsTraps.filter((item) => item.guid_id !== card.guid_id);
+      self.graveyard.push({ ...card, status: 'open' });
+    }
+    shared.lastAction = effectMessage;
   } else {
     throw Object.assign(new Error('Hành động không hợp lệ'), { statusCode: 400 });
   }
 
   await Promise.all([persist(self, shared), persist(opponent, shared)]);
-  return getDuelState(playerName);
+  const state = await getDuelState(playerName);
+  return { ...state, effectMessage: shared.lastAction || null };
 };
